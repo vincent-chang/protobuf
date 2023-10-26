@@ -363,6 +363,8 @@ extern "C" {
     fn upb_Array_Get(arr: RawRepeatedField, i: usize) -> upb_MessageValue;
     fn upb_Array_Append(arr: RawRepeatedField, val: upb_MessageValue, arena: RawArena);
     fn upb_Array_Resize(arr: RawRepeatedField, size: usize, arena: RawArena);
+    fn upb_Array_MutableDataPtr(arr: RawRepeatedField) -> *mut std::ffi::c_void;
+    fn upb_Array_DataPtr(arr: RawRepeatedField) -> *const std::ffi::c_void;
 }
 
 macro_rules! impl_repeated_primitives {
@@ -404,16 +406,11 @@ macro_rules! impl_repeated_primitives {
                     ) }
                 }
                 pub fn copy_from(&mut self, src: &RepeatedField<'_, $rs_type>) {
-                    // TODO: Optimize this copy_from implementation using memcopy.
-                    // NOTE: `src` cannot be `self` because this would violate borrowing rules.
-                    unsafe { upb_Array_Resize(self.inner.raw, 0, self.inner.arena.raw()) };
-                    // `upb_Array_DeepClone` is not used here because it returns
-                    // a new `upb_Array*`. The contained `RawRepeatedField` must
-                    // then be set to this new pointer, but other copies of this
-                    // pointer may exist because of re-borrowed `RepeatedMut`s.
-                    // Alternatively, a `clone_into` method could be exposed by upb.
-                    for i in 0..src.len() {
-                        self.push(src.get(i).unwrap());
+                    unsafe {
+                        upb_Array_Resize(self.inner.raw, src.len(), self.inner.arena.raw());
+                        std::ptr::copy_nonoverlapping(upb_Array_DataPtr(src.inner.raw),
+                         upb_Array_MutableDataPtr(self.inner.raw),
+                         std::mem::size_of::<$rs_type>() * src.len());
                     }
                 }
             }
