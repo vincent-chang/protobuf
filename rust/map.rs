@@ -7,8 +7,11 @@
 
 use crate::{
     __internal::Private,
-    __runtime::{Map, MapInner, MapValueType},
+    __runtime::{
+        Map, MapInner, MapKeyBOOLOps, MapKeyI32Ops, MapKeyI64Ops, MapKeyU32Ops, MapKeyU64Ops,
+    },
 };
+use paste::paste;
 
 #[derive(Clone, Copy)]
 #[repr(transparent)]
@@ -26,14 +29,6 @@ impl<'a, K: ?Sized, V: ?Sized> MapView<'a, K, V> {
     pub fn from_inner(_private: Private, inner: MapInner<'a>) -> Self {
         Self { inner: Map::<'a, K, V>::from_inner(_private, inner) }
     }
-
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
 }
 
 impl<'a, K: ?Sized, V: ?Sized> MapMut<'a, K, V> {
@@ -44,14 +39,22 @@ impl<'a, K: ?Sized, V: ?Sized> MapMut<'a, K, V> {
 
 macro_rules! impl_scalar_map_keys {
   ($(key_type $type:ty;)*) => {
-      $(
-        impl<'a, V: MapValueType> MapView<'a, $type, V> {
+      paste! { $(
+        impl<'a, V: [< MapKey $type:upper Ops >]> MapView<'a, $type, V> {
           pub fn get(&self, key: $type) -> Option<V> {
             self.inner.get(key)
           }
+
+          pub fn len(&self) -> usize {
+            self.inner.size()
+          }
+
+          pub fn is_empty(&self) -> bool {
+            self.len() == 0
+          }
         }
 
-        impl<'a, V: MapValueType> MapMut<'a, $type, V> {
+        impl<'a, V: [< MapKey $type:upper Ops >]> MapMut<'a, $type, V> {
           pub fn insert(&mut self, key: $type, value: V) -> bool {
             self.inner.insert(key, value)
           }
@@ -64,7 +67,7 @@ macro_rules! impl_scalar_map_keys {
             self.inner.clear()
           }
         }
-      )*
+      )* }
   };
 }
 
