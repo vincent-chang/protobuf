@@ -11,13 +11,24 @@
 #include <string.h>
 
 #include "upb/base/descriptor_constants.h"
+#include "upb/base/internal/log2.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/message/accessors.h"
+#include "upb/message/array.h"
+#include "upb/message/internal/accessors.h"
+#include "upb/message/internal/array.h"
+#include "upb/message/internal/extension.h"
+#include "upb/message/internal/map.h"
 #include "upb/message/internal/message.h"
+#include "upb/message/map.h"
 #include "upb/message/message.h"
+#include "upb/message/tagged_ptr.h"
+#include "upb/mini_table/extension.h"
 #include "upb/mini_table/field.h"
 #include "upb/mini_table/internal/field.h"
+#include "upb/mini_table/internal/message.h"
+#include "upb/mini_table/message.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -132,7 +143,7 @@ upb_Array* upb_Array_DeepClone(const upb_Array* array, upb_CType value_type,
                                const upb_MiniTable* sub, upb_Arena* arena) {
   size_t size = array->size;
   upb_Array* cloned_array =
-      _upb_Array_New(arena, size, _upb_Array_CTypeSizeLg2(value_type));
+      _upb_Array_New(arena, size, upb_Log2CTypeSize(value_type));
   if (!cloned_array) {
     return NULL;
   }

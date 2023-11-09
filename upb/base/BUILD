@@ -32,7 +32,10 @@ cc_library(
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
-    deps = ["//upb:port"],
+    deps = [
+        ":base",
+        "//upb:port",
+    ],
 )
 
 # begin:github_only

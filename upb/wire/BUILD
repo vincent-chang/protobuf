@@ -49,6 +49,7 @@ cc_library(
         ":reader",
         ":types",
         "//upb:base",
+        "//upb:base_internal",
         "//upb:hash",
         "//upb:mem",
         "//upb:mem_internal",
